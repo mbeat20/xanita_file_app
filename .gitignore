@@ -1,0 +1,28 @@
+# OS / editor
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.pytest_cache/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.next/
+frontend/.vite/
+
+# Env & logs
+.env
+.env.*
+!.env.example
+*.log
+
+# Large binaries (keep out of repo)
+**/*.xlsx
+**/*.xls
