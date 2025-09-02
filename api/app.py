@@ -8,9 +8,18 @@ from fastapi.responses import FileResponse
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from dotenv import load_dotenv
+from pathlib import Path
+
+load_dotenv(dotenv_path=Path(__file__).with_name(".env"))
+load_dotenv(dotenv_path=Path(__file__).with_name(".env.development"), override=False)
+
+
+dsn = os.getenv("DATABASE_URL")
+if not dsn:
+    raise RuntimeError("Set dsn in api/.env.development or your host env")
 
 # dsn = "postgresql://postgres:MattB01@localhost:5432/xanita-app" # Connecting to postgres db
-dsn = os.environ["DATABASE_URL"]
 app = FastAPI(title="Xanita Search")
 
 app.add_middleware(

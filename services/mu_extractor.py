@@ -12,14 +12,17 @@ import psycopg
 from psycopg.rows import tuple_row, dict_row
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
+from dotenv import load_dotenv
 
+load_dotenv()  # loads .env if present in this folder
 
+DB_DSN = os.getenv("DATABASE_URL")
+if not DB_DSN:
+    raise RuntimeError("DATABASE_URL is not set. Add it to services/mu_extractor/.env")
 
-IMAGES_OUT_DIR = r'C:\Users\Dell\OneDrive - Xanita\Projects\mu_sheets\extracted_images'
-
+# IMAGES_OUT_DIR = r'C:\Users\Dell\OneDrive - Xanita\Projects\mu_sheets\extracted_images'
 
 # DB_DSN   = "postgresql://postgres:MattB01@localhost:5432/xanita-app"
-DB_DSN = os.environ["DATABASE_URL"]
 PROCESS  = "mu_extractor"
 ETL_VERSION = 1
 EXTRACT_IMAGES = False
@@ -139,8 +142,6 @@ def extract_jobs(vals, filename):
         if m:
             job_no = m.group(1)
             break
-
-    # --- Try label followed by next cell
     if job_no is None:
         for i, t in enumerate(lower):
             if re.fullmatch(r'job\s*(?:no\.?|number|#)\s*:?', t):
@@ -150,7 +151,6 @@ def extract_jobs(vals, filename):
                         job_no = digits
                         break
 
-    # --- Job name: inline or label + next cell
     for i, t in enumerate(lower):
         if re.fullmatch(r'job\s*name\s*:?', t) or re.fullmatch(r'project\s*name\s*:?', t):
             if i + 1 < len(txts):
@@ -161,7 +161,6 @@ def extract_jobs(vals, filename):
             job_name = m.group(1).strip()
             break
 
-    # --- Fallbacks from the file path
     p = Path(filename)
     # job folder e.g. ".../Job10023-Client-Thing/.../sheet.xlsx"
     job_folder = next((part for part in p.parts if re.match(r'(?i)^job\d+', part)), None)
@@ -343,7 +342,7 @@ def write_mu_to_postgres_conn(conn, job_rows, dims_rows, board_rows):
         for r in board_rows:
             uid = r["ID"]
             xb_type = r["XB Type"]
-            thickness = to_decimal(r["Thickness (mm)"])  # numeric
+            thickness = r["Thickness (mm)"] 
             size = r["Size"]
             units = to_decimal(r["Units Up"])
             data_boards.append((uid, xb_type, thickness, size, units))

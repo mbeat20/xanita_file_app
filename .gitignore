@@ -26,3 +26,6 @@ frontend/.vite/
 # Large binaries (keep out of repo)
 **/*.xlsx
 **/*.xls
+
+api/.venv/
+api/.env*

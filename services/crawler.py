@@ -9,7 +9,7 @@ import json
 import time
 import os
 
-DB_DSN    = "postgresql://postgres:MattB01@localhost:5432/xanita-app"
+# DB_DSN    = "postgresql://postgres:MattB01@localhost:5432/xanita-app"
 PROCESS   = "crawler"
 ETL_VERSION = 1
 BATCH_SIZE  = 1000  # insert watermark in batches of N rows

@@ -6,8 +6,28 @@ import os
 from pathlib import Path
 import psycopg
 from psycopg.rows import dict_row
+from dotenv import load_dotenv
 
-ROOTS = [Path(r"X:\\"), Path(r"U:\XConverting3")]
+ROOTS = [Path(r"X:\\")]
+
+from urllib.parse import urlparse
+
+# Load the .env that sits NEXT TO this file
+load_dotenv(dotenv_path=Path(__file__).with_name('.env'))
+
+DB_DSN = (os.getenv("DATABASE_URL") or "").strip().strip('"').strip("'")
+print("DSN loaded:", bool(DB_DSN), "len:", len(DB_DSN))
+try:
+    u = urlparse(DB_DSN)
+    print("DB host:", u.hostname, "port:", u.port, "scheme:", u.scheme)
+except Exception as e:
+    print("Could not parse DSN:", e)
+
+load_dotenv(dotenv_path=Path(__file__).with_name('.env'))
+
+DB_DSN = os.getenv("DATABASE_URL")
+if not DB_DSN:
+    raise RuntimeError("DATABASE_URL is not set. Add it to services/mu_extractor/.env")
 
 def make_uid(filepath: Union[str, Path]) -> str:
     """
@@ -17,7 +37,7 @@ def make_uid(filepath: Union[str, Path]) -> str:
     p = Path(filepath)
     norm = p.as_posix().lower()
     h = hashlib.sha256(norm.encode("utf-8")).hexdigest()
-    return h[:12]  # short but plenty unique for your corpus
+    return h[:6]  
 
 def upsert_location(cur: Cursor, job_name: str, filepath: Union[str, Path]) -> str:
     """
@@ -31,14 +51,14 @@ def upsert_location(cur: Cursor, job_name: str, filepath: Union[str, Path]) -> s
         VALUES (%s, %s, %s)
         ON CONFLICT (uid) DO UPDATE
           SET job_name = EXCLUDED.job_name,
-              filepath = EXCLUDED.filepath;
+              filepath = EXCLUDED.filepath,
+              updated_at = now();
         """,
         (uid, job_name, str(filepath)),
     )
     return uid
 
-def scan_and_upsert():
-    dsn = os.environ["DATABASE_URL"]  # set this first (see step 4)
+def scan_and_upsert(dsn=DB_DSN):
     total = 0
     with psycopg.connect(dsn, row_factory=dict_row) as con, con.cursor() as cur:
         for root in ROOTS:
@@ -56,5 +76,5 @@ def scan_and_upsert():
         con.commit()
     print(f"mu_locator: upserted {total} rows into mu_locations")
 
-if __name__ == "__main__":
-    scan_and_upsert()
+
+scan_and_upsert(DB_DSN)
