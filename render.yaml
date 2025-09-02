@@ -13,5 +13,5 @@ services:
       - key: ALLOW_ORIGINS
         value: https://xanita-file-app.vercel.app,http://localhost:5173
       # If you added the “path only” mode earlier:
-      # - key: SERVE_MODE
-      #   value: path
+      - key: SERVE_MODE
+        value: path
