@@ -102,12 +102,12 @@ const Index = () => {
 
           <TabsContent value="files" className="space-y-6">
             <FileSearchForm onSearch={handleFileSearch} isLoading={isSearchLoading} />
-            <FileResults results={searchResults} isLoading={isSearchLoading} apiBaseUrl={apiBaseUrl} />
+            <FileResults results={searchResults} isLoading={isSearchLoading} />
           </TabsContent>
 
           <TabsContent value="materials" className="space-y-6">
             <MaterialUsageForm onSearch={handleMaterialSearch} isLoading={isMaterialLoading} />
-            <FileResults results={materialResults} isLoading={isMaterialLoading} apiBaseUrl={apiBaseUrl} />
+            <FileResults results={materialResults} isLoading={isMaterialLoading} />
           </TabsContent>
         </Tabs>
       </div>
