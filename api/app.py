@@ -22,19 +22,28 @@ if not dsn:
 # dsn = "postgresql://postgres:MattB01@localhost:5432/xanita-app" # Connecting to postgres db
 app = FastAPI(title="Xanita Search")
 
+ALLOW_ORIGINS = os.getenv("ALLOW_ORIGINS")
+
+# Optional: allow all Vercel preview URLs (regex), e.g. set env to: https://.*\.vercel\.app
+ALLOW_ORIGIN_REGEX = os.getenv("ALLOW_ORIGIN_REGEX")
+
+if ALLOW_ORIGINS:
+    origins = [o.strip() for o in ALLOW_ORIGINS.split(",") if o.strip()]
+else:
+    # sensible dev defaults
+    origins = [
+        "http://localhost:5173", "http://127.0.0.1:5173",
+        "http://localhost:8080", "http://127.0.0.1:8080",
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:8080",
-        "http://127.0.0.1:8080",
-        "http://[::1]:8080",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://[::1]:5173",
-    ],
-    allow_credentials=False,   # keep False so we can use allow_origins="*"
+    allow_origins=origins,
+    allow_origin_regex=ALLOW_ORIGIN_REGEX,   # can be None
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"],  # handy later for downloads
 )
 
 def run_query(sql, params):
@@ -128,18 +137,37 @@ def material_usage(job_id: str = None, name: str = None, xb_type: str = None, th
     return rows
         
 
+# @app.get("/resources/{id}")
+# def download_resource(id: int):
+#     params = []
+#     sql = """
+#         SELECT abs_path, filename FROM resources WHERE id = %s     
+#     """
+#     # params = id
+#     rows = run_query(sql,[id])
+#     abs_path = rows[0]["abs_path"]
+#     filename = rows[0]["filename"]
+#     if not os.path.exists(abs_path):
+#         # File was indexed but is no longer on disk
+#         raise HTTPException(status_code=410, detail="File missing on disk")
+#     mime = mimetypes.guess_type(filename)[0] or "application/octet-stream"
+#     return FileResponse(abs_path, media_type=mime, filename=filename)
+
 @app.get("/resources/{id}")
 def download_resource(id: int):
-    params = []
-    sql = """
-        SELECT abs_path, filename FROM resources WHERE id = %s     
-    """
-    # params = id
-    rows = run_query(sql,[id])
-    abs_path = rows[0]["abs_path"]
-    filename = rows[0]["filename"]
+    row = run_query("SELECT abs_path, filename FROM resources WHERE id = %s", [id])
+    if not row:
+        raise HTTPException(status_code=404, detail="Not found")
+
+    abs_path = row[0]["abs_path"]
+    filename = row[0]["filename"]
+
+    # Hosted mode: just return the path so users can find it on the network themselves
+    if SERVE_MODE == "path":
+        return {"filename": filename, "path": abs_path}
+
+    # Local dev: serve from disk
     if not os.path.exists(abs_path):
-        # File was indexed but is no longer on disk
         raise HTTPException(status_code=410, detail="File missing on disk")
     mime = mimetypes.guess_type(filename)[0] or "application/octet-stream"
     return FileResponse(abs_path, media_type=mime, filename=filename)
