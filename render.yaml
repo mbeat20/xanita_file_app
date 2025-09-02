@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: xanita-api
+    env: python
+    plan: free
+    buildCommand: pip install -r api/requirements.txt  
+    startCommand: uvicorn api.app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false   # set this in the Render dashboard
+      - key: ALLOW_ORIGINS
+        value: https://your-frontend.vercel.app,http://localhost:5173
+      # If you added the “path only” mode earlier:
+      # - key: SERVE_MODE
+      #   value: path
